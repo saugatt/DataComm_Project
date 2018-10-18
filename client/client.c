@@ -20,6 +20,104 @@ Saugat Tripathi
 #include <stdio.h>
 #include <stdlib.h>
 
-int main(int argc, char *argv[]) {
+int ParseCmdLine(int argc, char *argv[], char **sAddr, char **sPort, char **readFile, char** type, char** saveFile) {
+// checking if all the arguments are present
 
+    if (argv[1] == NULL) 
+    {
+        perror("Server address missing");
+        exit(1);
+    }
+
+    if (argv[2] == NULL)
+    {
+        perror("Port number missing");
+        exit(1);
+    }
+
+    if (argv[3] == NULL) 
+    {
+        perror("Reading file name missing");
+        exit(1);
+    }
+
+    if (argv[4] == NULL)
+    {
+        perror("Host name missing");
+        exit(1);
+    }
+  
+    if (argv[5]==NULL) 
+    {
+        perror("File name of output file missing");
+        exit(1);
+    }
+   
+    return 0;
+}
+
+int main(int argc, char *argv[]) {
+	char     *type;                 // type variable                    
+    char     *readFile;             //  file to read by client           
+    char     *saveFile;             //  file name to be saved at server  
+    int      state;                 //   state of process     
+
+
+    int       conn_s;                //  connection socket         
+    short int port;                  // port number               
+    char     *endptr;                         
+    struct    sockaddr_in servaddr;  //  socket address structure  
+    char     *sAddr;             	 // remote IP address   
+    char      buffer[LINE_MAXIMUM];  // character buffer       
+    char     *sPort;                 //remote port         
+
+
+// Get command line arguments
+    ParseCmdLine(argc, argv, &sAddr, &sPort, &readFile, &type, &saveFile);
+        //Setting the read arguments into repective
+ 
+    *sAddr = argv[1];
+    *sPort = argv[2];
+    *readFile = argv[3];
+    *type = argv[4];
+    *saveFile = argv[5];
+
+    // argument validation and setup into appropriate struct begins here
+
+    // strstr checkes if type has 0, 1, 2 or 3
+    if (strstr("0123", type) == NULL) 
+    {
+        perror("Only type 0, 1, 2 or 3 is supported by the server");
+    }
+
+
+    // validating the gathered port and setting it to the port variable
+    port = strtol(sPort, &endptr, 0);
+    if ( *endptr ) 
+    {
+		printf("ECHOCLNT: The port supplited is not valide\n");
+		exit(EXIT_FAILURE);
+    }
+
+    // creating listening socket
+    if ((conn_s = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) 
+    {
+		fprintf(stderr, "ECHOCLNT: Could not create a listening socket.\n");
+		exit(EXIT_FAILURE);
+    }
+
+    // clearing the socket adress with 0's and then filling up it's attributes with the correct value
+    memset(&servaddr, 0, sizeof(servaddr));
+    // AF_INET designate the type of addresses that your socket can communicate with 
+    servaddr.sin_family      = AF_INET;
+    servaddr.sin_port        = htons(port);
+
+    //remote IP address is stored in the struct 
+    if ( inet_aton(sAddr, &servaddr.sin_addr) <= 0 )
+    {
+		printf("ECHOCLNT: Invalid remote IP address.\n");
+		exit(EXIT_FAILURE);
+    }
+
+    return EXIT_SUCCESS;
 }
