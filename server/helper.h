@@ -2,9 +2,6 @@
 Saugat Tripathi
 @02752994
 */
-
-
-
 #ifndef PG_SOCK_HELP
 #define PG_SOCK_HELP
 
@@ -23,7 +20,7 @@ Saugat Tripathi
 #define LISTENQ (1024)  
 
 //declarations
-int mainConverter(char* file_name, char* char_type, int* data_array, int count, int start);
+int mainConverter(char* file_name, char* charType, int* valueArray, int count, int start);
 
 
 //convert to type 0 format
@@ -82,6 +79,179 @@ void secondTypeConverter(FILE* fp, unsigned char type, int length, int values[])
 	
 }
 
+
+int mainConverter(char* file_name, char* charType, int* valueArray, int count, int start)
+{
+	// vairable declatrations
+	int conversionType;									
+	int type;										
+	int length;		
+	// file pointer for write file								
+	FILE *fp; 																	
+	int i;		
+
+	// Buffer start position
+	i = start;								
+	conversionType = atoi(charType);		
+	type = 9;								
+	// this is a write file
+	fp = fopen(file_name, "wb");		
+	/* 	Checking if the first character of file starts with type format  */
+
+	if (valueArray[i] != 0 && valueArray[i] != 1) {
+		return printError(fp, "First byte format is incorrect!", file_name);
+	}
+
+
+	// parsing the values and calling conversion
+	while (i < count) {
+
+		// if there is no type		
+		if (type == 9)
+		{							
+			type = valueArray[i];										
+			i += 1;									
+		// conversion of type 0
+		}
+		else if (type == 0)
+		{
+			//printf("Type 0 ");
+			length = valueArray[i];					
+			printf("%d ", length);					
+			
+			int values[length];					
+													
+			i += 1;									
+
+
+			for (int j = 0; j < length; j++) 
+			{
+				// joining two single byte data
+				int result = (valueArray[i] << 8) | valueArray[i+1];
+				// print number with ',' or without comma
+				if (j == length-1) 
+				{
+					printf("%d", result);			
+				} 
+				else
+				{
+					printf("%d,", result);		
+				}
+				// adding number to number array
+				values[j] = result;				
+				i += 2;								
+			}
+
+			printf("\n");							
+			
+			/**	
+			 *
+			 *	Passing length and values in respective function  
+			 *  	
+			 *	If the client sends type 3 or 1, it converts the data to first type
+			 *	else, it converts the data into second type
+			 *
+			 */
+
+			if (conversionType == 3 || conversionType == 1)
+			{	
+				firstTypeConverter(fp, type, length, values);
+			} 
+			else 
+			{
+				secondTypeConverter(fp, type, length, values);
+			}
+			// setting type as default
+			type = 9;								
+		
+		// type 1 processing
+		} else if (type == 1) {
+
+			/*  Getting the three bytes length which are sent as character  */
+
+			length = 100*(valueArray[i]-48) + 10*(valueArray[i+1]-48) + (valueArray[i+2]-48);
+
+			printf("%d ", length);					// print length
+			
+			int values[length];					// number arary for storing values
+			i += 3;									// incremnting buffer position
+
+			/*  Getting N(length) values in a loop  */
+			
+			for (int j=0; j<length; j++) {
+				int result = 0;
+
+				// getting each char untill 0, 1 or null
+				while (valueArray[i] != 0 && valueArray[i] != 1  && valueArray[i] != '\0') 
+				{
+					//checking for comma
+					if (valueArray[i] == 44) {		
+						i += 1;						
+						break;
+					}
+
+					// getting no from ASCII
+					result = result*10 + (valueArray[i]-48); 
+					i += 1;							
+
+					//making sure the numer is within tne range
+					if (result > 65535 || result < 0) {
+						return printError(fp, "Invalid Number for type 1!", file_name);
+					}
+
+				} 
+
+
+				if ((j < length-1) && (valueArray[i] == 0 || valueArray[i] == 1  || valueArray[i] == '\0')) 
+				{
+
+					return printError(fp, "Type 1 format error!", file_name);
+				}
+
+				if (j == length-1) 
+				{
+					//last no so no comma
+					printf("%d", result);			
+				} 
+				else {
+					printf("%d,", result);			
+				}
+				
+				values[j] = result;				
+			}
+
+			printf("\n");							
+
+			/*  If ending character found before reading n characters  */
+
+		
+			// type of 3 or 2 is of second format
+			if (conversionType == 3 || conversionType == 2)
+			{
+				secondTypeConverter(fp, type, length, values);
+			} 
+			else
+			{
+				firstTypeConverter(fp, type, length, values);
+			}
+			// setting type as default
+			type = 9;	
+
+		// type 1 or 0 not found
+		} 
+
+		else 
+		{
+			return printError(fp, "Type error!", file_name);
+		}
+
+	}
+
+	fclose(fp);		
+	// successfully completed								
+	return 1;										
+
+}
 
 
 
