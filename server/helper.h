@@ -242,7 +242,7 @@ int mainConverter(char* file_name, char* charType, int* valueArray, int count, i
 
 		else 
 		{
-			return printError(fp, "Type error!", file_name);
+			return printError(fp, "There seems to error in type!", file_name);
 		}
 
 	}
