@@ -70,7 +70,7 @@ int main()
 	int my_arr[1000];
 	int count;
 	FILE *output_pointer;
-	output_pointer = fopen("Output.dms", "wb");
+	output_pointer = fopen("Output", "wb");
 	unsigned char type;
 	FILE *readFile;
 	readFile=fopen("practice_project_test_file_1","rb");
