@@ -15,18 +15,16 @@ Saugat Tripathi
 #include <stdio.h>
 
 
-/*  Global constants  */
+//Global constants 
 
 #define LINE_MAXIMUM       (1000)
 #define HEADER_LINE        (100)
 
 
-/*  Function declarations  */
-
+//Function declarations  
 int ParseCmdLine(int argc, char *argv[], char **sAddr, char **sPort, char **readFile, char** type, char** saveFile);
+void connectionHandler(int conn_s, char* type, char* readFile, char* saveFile);
 
-
-/*  main()  */
 
 int main(int argc, char *argv[]) {
 
@@ -83,15 +81,10 @@ int main(int argc, char *argv[]) {
     servaddr.sin_port        = htons(port);
 
 
-    /*  Set the remote IP address  */
-
     if ( inet_aton(sAddr, &servaddr.sin_addr) <= 0 ) {
 	printf("ECHOCLNT: Invalid remote IP address.\n");
 	exit(EXIT_FAILURE);
     }
-
-    
-    /*  connect() to the remote echo server  */
 
     //remote IP address is stored in the struct 
     if ( inet_aton(sAddr, &servaddr.sin_addr) <= 0 )
@@ -100,8 +93,21 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
  
-    return EXIT_SUCCESS;
-}
+	connectionHandler(conn_s, type, readFile, saveFile);
+
+    // Read the state from the socket  
+    read(conn_s, &state, sizeof(int));
+
+  	// printing message base on the state
+    if (state == 0)
+    {
+        printf("There was an error in the format \n");
+    } else
+    {
+        printf("Program executed sucessfully\n");
+    }
+
+    return EXIT_SUCCESS;}
 
 
 
@@ -148,6 +154,74 @@ int ParseCmdLine(int argc, char *argv[], char **sAddr, char **sPort, char **read
     *saveFile = argv[5];
 
     return 0;
+}
+
+// reads data from file, creates the header and sends the data to the server
+void connectionHandler(int conn_s, char* type, char* readFile, char* saveFile) {
+
+    unsigned char buffer[1];                        // reading buffer initialized
+
+    int valueArray[LINE_MAXIMUM + HEADER_LINE];      // buffer to store data and header
+    int count = 1;                                  // intial buffer position
+    int i;                                          // looping variable
+    int type_size = strlen(type);                   // getting length of type
+    int saveFile_size = strlen(saveFile);           // getting length of server file name
+    
+
+// adding type size and type to the value array    
+    valueArray[count] = type_size;
+    count++;                                        // incrementing buffer postion
+    for (i=0; i<type_size; i++) {
+        valueArray[count] = type[i];
+        count++;
+    }
+
+    //Copying file_name size and file_name in value array  
+    valueArray[count] = saveFile_size;
+    count++;                                         // incrementing buffer postion
+    for (i=0; i<saveFile_size; i++) {
+        valueArray[count] = saveFile[i];
+        count++;
+    }
+        
+    // read the file 
+    FILE *ptr;
+    ptr=fopen(readFile,"rb");                    
+    // checking error while reading the file
+    if (!ptr) { 
+        perror("Unable to open file!"); 
+        exit(1);
+    
+    }
+
+// checking if the file length exceeds 1000 byets
+    fseek(ptr, 0, SEEK_END);
+    int lengthOfFile = ftell(ptr);
+    rewind(ptr);
+
+
+// show error if file length exceeds 1000 bytes    
+    if (lengthOfFile > 1000) {
+        perror("File length exceed!");
+        exit(1);
+
+    }
+
+   //Reading the file 1 byte at a time and saving into valueArray as integer
+
+    while (fread(&buffer,sizeof(buffer),1,ptr) != 0) {
+        /*  Saving the file buffer into data array  */
+        valueArray[count] = buffer[0];
+        count += 1;
+    }
+
+// adding count to the beginning of the buffer
+    valueArray[0] = count;                      
+
+// writing data as integer to the socket
+    write(conn_s, &valueArray, sizeof(int)*count);  
+    fclose(ptr);                                    
+
 }
 
 
