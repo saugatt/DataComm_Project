@@ -99,7 +99,7 @@ int mainConverter(char* file_name, char* charType, int* valueArray, int count, i
 	/* 	Checking if the first character of file starts with type format  */
 
 	if (valueArray[i] != 0 && valueArray[i] != 1) {
-		return printError(fp, "First byte format is incorrect!", file_name);
+		return printError(fp, "First byte cannot be other than 0 or 1", file_name);
 	}
 
 
@@ -196,7 +196,7 @@ int mainConverter(char* file_name, char* charType, int* valueArray, int count, i
 
 					//making sure the numer is within tne range
 					if (result > 65535 || result < 0) {
-						return printError(fp, "Invalid Number for type 1!", file_name);
+						return printError(fp, "The file has invalid number for type 1!", file_name);
 					}
 
 				} 
@@ -205,7 +205,7 @@ int mainConverter(char* file_name, char* charType, int* valueArray, int count, i
 				if ((j < length-1) && (valueArray[i] == 0 || valueArray[i] == 1  || valueArray[i] == '\0')) 
 				{
 
-					return printError(fp, "Type 1 format error!", file_name);
+					return printError(fp, "The file has invalid format for format error Type 1 !", file_name);
 				}
 
 				if (j == length-1) 
