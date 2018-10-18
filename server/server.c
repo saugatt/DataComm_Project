@@ -15,13 +15,11 @@ Saugat Tripathi
 #include <stdio.h>
 
 
-/*  Global constants  */
 #define ECHO_PORT          (5002)
 #define MAX_LINE           (1000)
 
 
-/* Function Decleration */
-
+// declearation
 int connectionHandler(int conn_s);
 
 
@@ -32,6 +30,7 @@ int main(int argc, char *argv[]) {
     struct    sockaddr_in servaddr;  /*  socket address structure  */
     char      buffer[MAX_LINE];      /*  character buffer          */
     char     *endptr;                /*  for strtol()              */
+    int       state;                 /*  state is 0 or 1 faliure or sucess     */
 
 
     //getting the port number and seeting it
@@ -58,8 +57,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    /*  Set all bytes in socket address structure to
-        zero, and fill in the relevant data members   */
+    // Put everything in the  socket address structure to zero
 
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family      = AF_INET;
@@ -83,22 +81,86 @@ int main(int argc, char *argv[]) {
     }
 
     
-    /*  Enter an infinite loop to respond
-        to client requests and echo input  */
-
+    // infinte loop to accept the connection from the client
     while ( 1 ) {
 
     /*  Wait for a connection, then accept() it  */
 
     if ( (conn_s = accept(list_s, NULL, NULL) ) < 0 ) 
     {
-        //printf("Connection accepted");
         fprintf(stderr, "SERVER: Could not accept()\n");
         exit(EXIT_FAILURE);
     }
 
-    
+    //  Connection Haldler for reading from client 
+    state = connectionHandler(conn_s);
+
+    //  Writes the state(success/failure) to the socket  
+
+    write(conn_s, &state, sizeof(int));
+
+    if (close(conn_s) < 0 ) 
+    {
+        fprintf(stderr, "SERVER: Could not close close()\n");
+        exit(EXIT_FAILURE);
+    }
+    }
 }
 
-}
 
+int connectionHandler(int conn_s) {
+    // total buff size
+    int count;                          
+    int i;                              
+    int buff_indx;
+    // success state                        
+    int state;                   
+    int typeSize;                     
+    int fileNameSize;              
+    int buffer[MAX_LINE];               
+
+
+    //  Reading fron the socket into buffer  
+    if ((read(conn_s, &buffer, sizeof(int)*MAX_LINE)) <= 0) {
+        return 0;
+    } 
+
+    //Length of buffer 
+    count = buffer[0];
+    // start of buffer index
+    buff_indx = 1;                            
+
+    //Getting size of types
+    typeSize = buffer[buff_indx];           
+    buff_indx += 1;                           
+
+    // Reading type from buffer 
+    char type[typeSize+1];            
+    for (i=0; i<typeSize; i++)
+    {      
+        type[i] = (char) buffer[i+buff_indx];
+    }
+    // Terminating with null to make string
+    type[typeSize+1] = '\0';          
+    buff_indx += typeSize;                  
+
+    // getting the size of the filename
+    fileNameSize = buffer[buff_indx];      
+    buff_indx += 1;                           
+
+    //reading file name from buffer
+    char file_name[fileNameSize+1];
+    for (i=0; i<fileNameSize; i++) {
+        file_name[i] = (char) buffer[i+buff_indx];
+    }
+    file_name[fileNameSize + 1] = '\0';
+    // increasing the buffer location
+    buff_indx += fileNameSize;             
+    // adding terminater to the buffer
+    buffer[count] = '\0';               
+
+    // file to convert  
+    state = mainConverter(file_name, type, buffer, count, buff_indx);
+
+    return state;
+}
