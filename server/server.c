@@ -22,7 +22,6 @@ Saugat Tripathi
 // declearation
 int connectionHandler(int conn_s);
 
-
 int main(int argc, char *argv[]) {
     int       list_s;                /*  listening socket          */
     int       conn_s;                /*  connection socket         */
@@ -101,7 +100,7 @@ int main(int argc, char *argv[]) {
 
     if (close(conn_s) < 0 ) 
     {
-        fprintf(stderr, "SERVER: Could not close close()\n");
+        fprintf(stderr, "SERVER: Could not call close()\n");
         exit(EXIT_FAILURE);
     }
     }
@@ -125,9 +124,13 @@ int connectionHandler(int conn_s) {
         return 0;
     } 
 
+
+
     //Length of buffer 
     count = buffer[0];
     // start of buffer index
+    printf("Read succesfully, %i\n", count);
+
     buff_indx = 1;                            
 
     //Getting size of types

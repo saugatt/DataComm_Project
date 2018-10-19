@@ -254,8 +254,6 @@ int mainConverter(char* file_name, char* charType, int* valueArray, int count, i
 }
 
 
-
-
 /* 	Error handler function to print error in server  */
 
 int printError(FILE *fp, char* message, char* file_name) {
